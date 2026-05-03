@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paylock Frontend SDK – Local Test</title>
+
+    <!-- Load LOCAL build (not CDN) -->
+    <script src="../dist/paylock-frontend.js"></script>
+
+    <script>
+        // SDK scans global scope and finds the first object that has license/lk.
+        // Keep it simple and predictable during development:
+        window.paylock = {
+            // REQUIRED
+            license: "019ae9f4-18b2-706b-b728-3f77c6bd9217",
+
+            // Optional: force domain (otherwise SDK uses window.location.hostname)
+            // domain: "yourapp.com",
+
+            // Cache behavior
+            // recheck: false -> permanently trust once validated
+            // recheck: true  -> recheck once per day
+            recheck: false,
+
+            // Force project-level check (ignore domain)
+            // checkType: "check_project",
+
+            // Injectables
+            injectables: true,
+            injectablesEndpoint: "mock/receive-injectables.php",
+            // injectablesEndpoint: "http://localhost:3001",
+
+            // Invalid behavior
+            invalidBehavior: "modal", // "redirect" | "modal"
+            redirectUrl: "https://paylock.ng/upgrade",
+
+            // Modal config
+            modalText: "This site is running unlicensed software!",
+            modalTheme: {
+                primary: "#facc15",
+                background: "#1f2937",
+                text: "#ffffff",
+                border: "#facc15",
+                glow: true
+            },
+
+            // Contact button config (modal)
+            developerEmail: "support@paylock.ng",
+            // email: "support@paylock.ng",
+            // supportEmail: "support@paylock.ng",
+            contactLabel: "Contact Developer",
+            contactSubject: "Paylock License Issue",
+            contactBody: "Hi, I’m seeing an unlicensed software message. Please help.",
+
+            // Optional: make contact button open a URL instead of mail client
+            // contactMode: "redirect", // "mailto" | "redirect"
+            // contactUrl: "https://paylock.ng/contact",
+
+            debug: true,
+            onReady: function () {
+                console.log("✅ onReady fired: license validated.");
+                document.getElementById("status").textContent = "✅ VALID (onReady fired)";
+            }
+        };
+    </script>
+
+    <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 24px; }
+        .row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+        button { padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
+        button:hover { opacity: 0.9; }
+        code { background: #f5f5f5; padding: 2px 6px; border-radius: 6px; }
+        .card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; margin-top: 16px; }
+    </style>
+</head>
+
+<body>
+<h1>Paylock Frontend SDK – Local Test</h1>
+<p id="status">⌛ Waiting… open console for SDK logs.</p>
+
+<div class="card">
+    <h2>Quick actions</h2>
+    <div class="row">
+        <button onclick="localStorage.clear(); location.reload();">Clear localStorage + reload</button>
+
+        <button onclick="
+        window.paylock.invalidBehavior='modal';
+        window.paylock.modalText='Forced modal test!';
+        localStorage.clear(); location.reload();
+      ">Force Modal (reset + reload)</button>
+
+        <button onclick="
+        window.paylock.invalidBehavior='redirect';
+        window.paylock.redirectUrl='https://paylock.ng/upgrade';
+        localStorage.clear(); location.reload();
+      ">Force Redirect (reset + reload)</button>
+
+        <button onclick="
+        window.paylock.recheck=true;
+        localStorage.clear(); location.reload();
+      ">Enable recheck=true (reset + reload)</button>
+
+        <button onclick="
+        window.paylock.recheck=false;
+        localStorage.clear(); location.reload();
+      ">Set recheck=false (reset + reload)</button>
+
+        <button onclick="
+        window.paylock.checkType='check_project';
+        localStorage.clear(); location.reload();
+      ">checkType=check_project (reset + reload)</button>
+
+        <button onclick="
+        delete window.paylock.checkType;
+        localStorage.clear(); location.reload();
+      ">Domain-aware check (reset + reload)</button>
+
+        <button onclick="
+        window.paylock.developerEmail='support@paylock.ng';
+        window.paylock.contactLabel='Email Paylock Support';
+        window.paylock.contactSubject='Paylock test email';
+        window.paylock.contactBody='Hello Paylock Support, I’m testing the SDK modal.';
+        localStorage.clear(); location.reload();
+      ">Set contact to Paylock support (reset + reload)</button>
+    </div>
+
+    <p style="margin-top: 14px; opacity: 0.75;">
+        Note: These buttons update config and then reload so the SDK bootstraps again.
+    </p>
+</div>
+
+<div class="card">
+    <h2>Mock injectables receiver</h2>
+    <p>
+        Your SDK forwards injectables to <code>injectablesEndpoint</code>. For local testing, set it to
+        <code>/mock/receive-injectables</code> and add a tiny handler in a dev server, or just point it to a real endpoint.
+    </p>
+</div>
+</body>
+</html>
