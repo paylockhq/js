@@ -1,22 +1,22 @@
 {
   "name": "@paylock/js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Frontend SDK for Paylock license verification, payment enforcement, and injectable delivery.",
-  "main": "dist/paylock-frontend.cjs.js",
-  "module": "dist/paylock-frontend.esm.js",
-  "browser": "dist/paylock-frontend.js",
+  "main": "dist/paylock-web.cjs.js",
+  "module": "dist/paylock-web.esm.js",
+  "browser": "dist/paylock-web.js",
   "exports": {
-    "import": "./dist/paylock-frontend.esm.js",
-    "require": "./dist/paylock-frontend.cjs.js"
+    "import": "./dist/paylock-web.esm.js",
+    "require": "./dist/paylock-web.cjs.js"
   },
   "scripts": {
     "clean": "rimraf dist",
-    "build:umd": "esbuild src/sdk.js --bundle --minify --format=iife --global-name=paylock --outfile=dist/paylock-frontend.js",
-    "build:esm": "esbuild src/sdk.js --bundle --minify --format=esm --outfile=dist/paylock-frontend.esm.js",
-    "build:cjs": "esbuild src/sdk.js --bundle --minify --format=cjs --outfile=dist/paylock-frontend.cjs.js",
+    "build:umd": "esbuild src/sdk.js --bundle --minify --format=iife --global-name=Paylock --outfile=dist/paylock-web.js",
+    "build:esm": "esbuild src/sdk.js --bundle --minify --format=esm --outfile=dist/paylock-web.esm.js",
+    "build:cjs": "esbuild src/sdk.js --bundle --minify --format=cjs --outfile=dist/paylock-web.cjs.js",
     "build": "npm run clean && npm run build:umd && npm run build:esm && npm run build:cjs",
-    "build:dev": "esbuild src/sdk.js --bundle --format=iife --sourcemap --outfile=dist/paylock-frontend.js",
-    "watch": "esbuild src/sdk.js --bundle --format=iife --sourcemap --outfile=dist/paylock-frontend.js --watch",
+    "build:dev": "esbuild src/sdk.js --bundle --format=iife --global-name=Paylock --sourcemap --outfile=dist/paylock-web.js",
+    "watch": "esbuild src/sdk.js --bundle --format=iife --global-name=Paylock --sourcemap --outfile=dist/paylock-web.js --watch",
     "serve": "npx serve . -l 5173",
     "prepublishOnly": "npm run build"
   },

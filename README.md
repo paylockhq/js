@@ -1,219 +1,138 @@
-# Paylock JS SDK 🛡️
+# Paylock JS SDK
 
-The easiest way to protect your SaaS or web application. Verify licenses, manage payments, and secure your code with just a few lines of JavaScript.
-
----
-
-## ✨ Features
-- 🚀 **Zero-effort Integration**: Works automatically by detecting global configs.
-- 🎨 **Beautiful Modals**: Built-in, fully customizable licensing UI.
-- 🔀 **Flexible Behavior**: Show a modal or redirect unauthorized users.
-- 🔐 **Secure Injectables**: Load premium features only for valid users.
-- 🧠 **Smart Caching**: Saves license status locally for lightning-fast loads.
+The official JavaScript SDK for PaylockHQ. Secure your application by validating project access, enforcing active licensing, and securely loading frontend injectables.
 
 ---
 
-## 🔧 Installation
+## Installation
 
-You can either include the SDK directly in your HTML, or install it via `npm`/`yarn` for Node.js/ESM/CommonJS use.
+Install via your package manager or include it directly via CDN.
 
-### ➤ Browser (via CDN or direct file)
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/@paylock/js@latest/dist/paylock-frontend.js"></script>
-```
-
-### ➤ Node.js / Build Tools
-
+**npm**
 ```bash
 npm install @paylock/js
 ```
 
-```js
-// ESM
-import "@paylock/js";
-
-// CommonJS
-require("@paylock/js");
+**CDN (Browser)**
+```html
+<script src="https://cdn.paylock.ng/paylock-web.js"></script>
 ```
 
 ---
 
-## 🚀 Usage
+## Initialization
 
-Before the SDK initializes, you must define a global config object in the browser’s `window` scope. This object allows the paylock SDK to read your license, configure behavior, and optionally handle secure injectables.
+Paylock can be initialized in two ways. **Never expose secret keys on the frontend**. Only use your public `apiKey`.
 
-#### ✅ Basic Usage
+### 1. Manual Initialization (Recommended)
 
-```html
-<script>
-  window.myapp = {
-    license: "YOUR_LICENSE_KEY", // Required
-    onReady: function () {
-      console.log("✅ License verified.");
-    },
-  };
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@paylock/js@latest/dist/paylock-frontend.js"></script>
+Call `Paylock.bootstrap()` with your configuration. This is ideal for SPA frameworks (React, Vue, etc.).
+
+```js
+import { Paylock } from '@paylock/js';
+
+await Paylock.bootstrap({
+  apiKey: 'pk_live_your_public_key',
+  licenseKey: 'user_license_abc123',
+  onReady: () => console.log('✅ Paylock initialized successfully'),
+  onInvalid: () => console.error('🚫 License is invalid'),
+});
 ```
 
-#### 💻 Minimal Modal with Default Text
+### 2. Auto-Initialization (Browser Global)
+
+Define `window.Paylock` before loading the CDN script. The SDK will detect this object and automatically initialize.
 
 ```html
 <script>
-  window.myapp = {
-    license: "LICENSE_ABC123",
-    invalidBehavior: "modal",
-    debug: false,
+  window.Paylock = {
+    apiKey: 'pk_live_your_public_key',
+    licenseKey: 'user_license_abc123',
+    invalidBehavior: 'modal'
   };
 </script>
-```
-
-> This shows the default paylock modal with fallback messaging when license is invalid or expired.
-
-#### 🏗️ Full Project Configuration
-
-If you prefer to specify project details individually:
-
-```html
-<script>
-  window.paylock = {
-    apiKey: "pk_live_your_project_public_key",
-    projectId: "69dbbbff80c3c7d88f330fbe",
-    environment: "production",
-    appName: "My SaaS App",
-    sdkVersion: "1.0.0",
-    onReady: function (data) {
-      console.log("paylock initialized", data);
-    },
-    onError: function (err) {
-      console.error("paylock failed to initialize", err);
-    },
-  };
-</script>
+<script src="https://cdn.paylock.ng/paylock-web.js"></script>
 ```
 
 ---
 
-## 🎨 Customizing the Experience
+## Configuration API
 
-### Custom Modal Theme
-Make the licensing modal match your brand perfectly.
-
-```js
-window.paylock = {
-  license: "YOUR_LICENSE_KEY",
-  invalidBehavior: "modal",
-  modalText: "🚫 This application is not licensed. Please contact support.",
-  modalTheme: {
-    primary: "#6366f1",     // Indigo
-    background: "#0f172a",  // Dark Slate
-    text: "#f8fafc",
-    border: "#6366f1",
-    glow: true              // Adds a subtle outer glow
-  }
-};
-```
-
-### Automatic Redirection
-Don't want a modal? Redirect unauthorized users to your pricing page instead.
-
-```js
-window.paylock = {
-  license: "YOUR_LICENSE_KEY",
-  invalidBehavior: "redirect",
-  redirectUrl: "https://yourapp.com/pricing"
-};
-```
-
-### Persistent License (No Daily Recheck)
-This skips license verification after the first success, unless storage is cleared.
-
-```js
-window.paylock = {
-  license: "YOUR_LICENSE_KEY",
-  recheck: false,
-  onReady: () => console.log("🔓 Cached license still valid.")
-};
-```
-
-### Injectables Support (Advanced)
-Load secure features or data only after a successful license check.
-
-```js
-window.paylock = {
-  license: "YOUR_LICENSE_KEY",
-  injectables: true,
-  injectablesEndpoint: "https://yourapp.com/sdk/receive",
-  onReady: () => console.log("🔐 License validated, injectables loading...")
-};
-```
-
-### Using Custom Config Names
-You can name your config object anything — Paylock will find it as long as it has a `license` or `lk` key.
-
-```html
-<script>
-  window._devSettings = {
-    lk: "YOUR_LICENSE_KEY",
-    debug: true,
-    onReady: () => console.log("🔐 _devSettings verified")
-  };
-</script>
-```
-
----
-
-## 📦 Framework Integration (ESM / CommonJS)
-
-### ESM (Vite, Nuxt, React, etc.)
-```js
-import "@paylock/js";
-
-window.paylock = {
-  license: "YOUR_LICENSE_KEY",
-  onReady: () => console.log("✅ Verified")
-};
-```
-
-### CommonJS (Webpack, Next.js)
-```js
-require("@paylock/js");
-
-global.paylock = {
-  license: "YOUR_LICENSE_KEY",
-  injectables: true,
-  injectablesEndpoint: "https://yourapp.com/sdk/receive"
-};
-```
-
----
-
-## ⚙️ Configuration API
-
-| Property | Type | Default | Description |
+| Option | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `license` | `string` | **Required** | Your project license key (or use `lk`). |
-| `apiKey` | `string` | `undefined` | Your project public API key. |
-| `projectId` | `string` | `undefined` | Your unique project ID. |
-| `environment` | `string` | `'production'` | Options: `'production'`, `'sandbox'`. |
-| `appName` | `string` | `undefined` | Name of your application. |
-| `sdkVersion` | `string` | `'1.0.0'` | Version of the SDK being used. |
-| `invalidBehavior` | `string` | `'modal'` | Options: `'modal'`, `'redirect'`, or `'none'`. |
-| `modalText` | `string` | `...` | Custom message shown in the invalid modal. |
-| `modalTheme` | `object` | `...` | Colors for `primary`, `background`, `text`, `border`. |
-| `redirectUrl` | `string` | `undefined` | URL to redirect to if `invalidBehavior` is `'redirect'`. |
-| `recheck` | `boolean` | `true` | If `false`, successful licenses are cached forever. |
-| `injectables` | `boolean` | `false` | Enable secure injectable loading. |
-| `injectablesEndpoint` | `string` | `undefined` | Where to send retrieved injectables. |
-| `debug` | `boolean` | `false` | Enables verbose logging in the console. |
+| `apiKey` | `string` | **Yes*** | Your public project API key (`pk_live_...`). Use this for global project protection. |
+| `licenseKey` | `string` | **Yes*** | User-level license key (`LICENSE_...`). Use this for user-level protection. |
+
+*(Note: You only need to provide **one** of `apiKey` OR `licenseKey`, not both.)*
+| `invalidBehavior` | `string` | No | How to handle failed validation: `'modal'`, `'redirect'`, or `'none'`. (Default: `'modal'`) |
+| `redirectUrl` | `string` | No | The URL to redirect to if `invalidBehavior` is `'redirect'`. |
+| `cache.enabled` | `boolean` | No | Whether to cache successful validation locally. (Default: `true`) |
+| `cache.ttl` | `number` | No | Time-to-live for the cache in seconds. (Default: `3600`) |
+| `injectables` | `boolean` | No | Fetch secure injectables from the Paylock API. |
+| `injectablesEndpoint` | `string`| No | Your backend endpoint to securely forward retrieved injectables to via POST. |
 
 ---
 
-## 📞 Support
-- 🌐 **Website**: [paylock.ng](https://paylock.ng)
-- 📧 **Email**: [support@paylock.ng](mailto:support@paylock.ng)
-- 📖 **Documentation**: [docs.paylock.ng](https://docs.paylock.ng)
+## Lifecycle Hooks
+
+You can respond to validation states using lifecycle callbacks:
+
+```js
+Paylock.bootstrap({
+  apiKey: 'pk_live_...',
+  licenseKey: '...',
+  onReady: (data) => {
+    // Fired when license is active and valid
+  },
+  onExpired: (error) => {
+    // Fired specifically when a previously valid license expires
+  },
+  onInvalid: (error) => {
+    // Fired when the license is structurally invalid or missing
+  },
+  onInjectablesLoaded: (injectables) => {
+    // Fired after injectables are successfully forwarded to your backend
+  }
+});
+```
 
 ---
-*Made with ❤️ by the Paylock Team.*
+
+## Secure Injectables Protocol
+
+Paylock allows you to securely inject premium features or configurations into an application.
+
+1. Set `injectables: true` and define your `injectablesEndpoint` (e.g., `https://api.yourapp.com/webhooks/paylock`).
+2. When validation succeeds, Paylock fetches the injectables.
+3. Paylock sends a `POST` request to your endpoint containing the payload.
+4. **Security:** The request includes an `x-paylock-signature` header containing an **HMAC Signed JWT** generated strictly by the Paylock Backend using your project's `webhookSecret`.
+5. **Your backend must verify this JWT signature** before trusting the injectables payload.
+
+```js
+// Frontend Configuration
+Paylock.bootstrap({
+  apiKey: 'pk_live_...',
+  licenseKey: '...',
+  injectables: true,
+  injectablesEndpoint: 'https://api.yourapp.com/webhooks/paylock'
+});
+```
+
+---
+
+## Caching Strategy
+
+By default, Paylock caches successful validations for 1 hour (3600 seconds) to ensure your application remains blazing fast and resilient to network hiccups.
+
+```js
+Paylock.bootstrap({
+  apiKey: 'pk_live_...',
+  licenseKey: '...',
+  cache: {
+    enabled: true,
+    ttl: 7200 // Cache for 2 hours
+  }
+});
+```
+
+*(Note: If a user is actively invalidated by the backend, the cache will be bypassed upon the next TTL expiration).*
