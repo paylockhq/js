@@ -1,7 +1,7 @@
 {
   "name": "@paylock/js",
-  "version": "1.0.1",
-  "description": "Frontend SDK for Paylock license verification, payment enforcement, and injectable delivery.",
+  "version": "1.0.2",
+  "description": "The official JavaScript SDK for PaylockHQ. Secure your application by validating project access, enforcing active licensing, and securely loading frontend injectables.",
   "main": "dist/paylock-web.cjs.js",
   "module": "dist/paylock-web.esm.js",
   "browser": "dist/paylock-web.js",
