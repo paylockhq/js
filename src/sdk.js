@@ -1,4 +1,4 @@
-const SDK_VERSION = "1.0.1";
+const SDK_VERSION = "1.0.2";
 const DEFAULT_BASE_URL = "https://api.paylock.ng/";
 const STORAGE_KEY_PREFIX = "paylock_";
 
@@ -13,15 +13,20 @@ let currentState = {
 };
 
 // Save any pre-existing window.Paylock config before esbuild overwrites it
-const preConfig = (typeof window !== "undefined" && window.Paylock && typeof window.Paylock === "object" && !window.Paylock.bootstrap) 
-  ? window.Paylock 
-  : null;
+const preConfig =
+  typeof window !== "undefined" &&
+  window.Paylock &&
+  typeof window.Paylock === "object" &&
+  !window.Paylock.bootstrap
+    ? window.Paylock
+    : null;
 
 // Simple EventEmitter implementation for SDK events
 const eventListeners = new Map();
 
 function on(eventName, callback) {
-  if (typeof callback !== "function") throw createError("Event callback must be a function");
+  if (typeof callback !== "function")
+    throw createError("Event callback must be a function");
   if (!eventListeners.has(eventName)) eventListeners.set(eventName, []);
   eventListeners.get(eventName).push(callback);
 
@@ -38,7 +43,14 @@ function emit(eventName, data) {
   logDebug(`Event: ${eventName}`, data);
   if (eventListeners.has(eventName)) {
     eventListeners.get(eventName).forEach((callback) => {
-      try { callback(data); } catch (err) { console.error(`[Paylock] Event callback error for '${eventName}':`, err); }
+      try {
+        callback(data);
+      } catch (err) {
+        console.error(
+          `[Paylock] Event callback error for '${eventName}':`,
+          err,
+        );
+      }
     });
   }
 }
@@ -57,11 +69,15 @@ function normalizeUrl(value) {
 }
 
 function generateDeviceId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   // Fallback for older environments
-  return 'dev_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 15);
+  return (
+    "dev_" +
+    Date.now().toString(36) +
+    Math.random().toString(36).substring(2, 15)
+  );
 }
 
 // UI Message Display System
@@ -80,7 +96,13 @@ const messageDefaults = {
 function createMessageElement(text, type = "info") {
   if (!isBrowser()) return null;
   const div = document.createElement("div");
-  const bgColor = { info: "#2563eb", success: "#16a34a", error: "#dc2626", warning: "#ea580c" }[type] || "#2563eb";
+  const bgColor =
+    {
+      info: "#2563eb",
+      success: "#16a34a",
+      error: "#dc2626",
+      warning: "#ea580c",
+    }[type] || "#2563eb";
 
   div.textContent = text;
   div.style.cssText = `
@@ -88,7 +110,9 @@ function createMessageElement(text, type = "info") {
     ${messageDefaults.position === "top-right" ? "top: 20px; right: 20px;" : "top: 20px; left: 20px;"}
     background-color: ${bgColor};
     color: white;
-    ${Object.entries(messageDefaults.styles).map(([k, v]) => `${k.replace(/([A-Z])/g, "-$1").toLowerCase()}: ${v};`).join("")}
+    ${Object.entries(messageDefaults.styles)
+      .map(([k, v]) => `${k.replace(/([A-Z])/g, "-$1").toLowerCase()}: ${v};`)
+      .join("")}
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     animation: slideIn 0.3s ease-out;
   `;
@@ -102,14 +126,18 @@ function createMessageElement(text, type = "info") {
   return div;
 }
 
-let showMessage = function(text, type = "info", duration = messageDefaults.duration) {
+let showMessage = function (
+  text,
+  type = "info",
+  duration = messageDefaults.duration,
+) {
   if (!isBrowser() || !document.body) return;
   const el = createMessageElement(text, type);
   if (!el) return;
   document.body.appendChild(el);
   if (duration > 0) setTimeout(() => el.remove(), duration);
   return () => el.remove();
-}
+};
 
 const showSuccess = (msg, duration) => showMessage(msg, "success", duration);
 const showError = (msg, duration) => showMessage(msg, "error", duration);
@@ -127,69 +155,95 @@ function createError(message) {
 function resolveConfig(userConfig) {
   const config = userConfig || preConfig;
   if (!config || typeof config !== "object") {
-    throw createError("No SDK configuration provided. Define window.Paylock or pass an object to Paylock.bootstrap().");
+    throw createError(
+      "No SDK configuration provided. Define window.Paylock or pass an object to Paylock.bootstrap().",
+    );
   }
 
   const apiKey = config.apiKey || config.pk;
   const licenseKey = config.licenseKey || config.license || config.lk;
-  
+
   if (!apiKey && !licenseKey) {
-    throw createError("Either apiKey (Project API Key) OR licenseKey (User License) is required.");
+    throw createError(
+      "Either apiKey (Project API Key) OR licenseKey (User License) is required.",
+    );
   }
 
-  let deviceId = isBrowser() ? localStorage.getItem('paylock_device_id') : null;
+  let deviceId = isBrowser() ? localStorage.getItem("paylock_device_id") : null;
   if (!deviceId && isBrowser()) {
     deviceId = generateDeviceId();
-    localStorage.setItem('paylock_device_id', deviceId);
+    localStorage.setItem("paylock_device_id", deviceId);
   }
 
   return {
     apiKey: apiKey ? apiKey.trim() : null,
     licenseKey: licenseKey ? licenseKey.trim() : null,
     projectId: config.projectId ? config.projectId.trim() : "unknown",
-    deviceId: deviceId || 'server_device',
+    deviceId: deviceId || "server_device",
     domain: config.domain || (isBrowser() ? window.location.hostname : null),
     baseUrl: normalizeUrl(config.baseUrl || DEFAULT_BASE_URL),
-    environment: config.environment || (isBrowser() && window.location.hostname.includes("localhost") ? "development" : "production"),
-    appName: config.appName || (isBrowser() ? document.title || "paylock-web" : "paylock-app"),
+    environment:
+      config.environment ||
+      (isBrowser() && window.location.hostname.includes("localhost")
+        ? "development"
+        : "production"),
+    appName:
+      config.appName ||
+      (isBrowser() ? document.title || "paylock-web" : "paylock-app"),
     sdkVersion: config.sdkVersion || SDK_VERSION,
     debug: config.debug === true,
     auto: config.auto === true,
     invalidBehavior: config.invalidBehavior || "modal",
     redirectUrl: config.redirectUrl || "https://paylock.ng/upgrade",
-    modalText: config.modalText || "Access denied. Payment is required or license is invalid.",
+    modalText:
+      config.modalText ||
+      "Access denied. Payment is required or license is invalid.",
     modalTheme: config.modalTheme || {},
     cache: {
       enabled: config.cache?.enabled !== false,
-      ttl: typeof config.cache?.ttl === 'number' ? config.cache.ttl : 3600 // default 1 hour
+      ttl: typeof config.cache?.ttl === "number" ? config.cache.ttl : 3600, // default 1 hour
     },
     network: {
-      retries: typeof config.network?.retries === 'number' ? config.network.retries : 3,
-      timeout: typeof config.network?.timeout === 'number' ? config.network.timeout : 8000
+      retries:
+        typeof config.network?.retries === "number"
+          ? config.network.retries
+          : 3,
+      timeout:
+        typeof config.network?.timeout === "number"
+          ? config.network.timeout
+          : 8000,
     },
     onReady: typeof config.onReady === "function" ? config.onReady : undefined,
     onError: typeof config.onError === "function" ? config.onError : undefined,
-    onInvalid: typeof config.onInvalid === "function" ? config.onInvalid : undefined,
-    onExpired: typeof config.onExpired === "function" ? config.onExpired : undefined,
-    onInjectablesLoaded: typeof config.onInjectablesLoaded === "function" ? config.onInjectablesLoaded : undefined,
+    onInvalid:
+      typeof config.onInvalid === "function" ? config.onInvalid : undefined,
+    onExpired:
+      typeof config.onExpired === "function" ? config.onExpired : undefined,
+    onInjectablesLoaded:
+      typeof config.onInjectablesLoaded === "function"
+        ? config.onInjectablesLoaded
+        : undefined,
     injectables: config.injectables === true,
-    injectablesEndpoint: typeof config.injectablesEndpoint === "string" ? config.injectablesEndpoint : undefined,
+    injectablesEndpoint:
+      typeof config.injectablesEndpoint === "string"
+        ? config.injectablesEndpoint
+        : undefined,
   };
 }
 
 async function apiRequest(path, body, method = "POST", additionalHeaders = {}) {
   const url = new URL(path, currentConfig.baseUrl).toString();
-  const defaultHeaders = { 
-    "Accept": "application/json", 
+  const defaultHeaders = {
+    Accept: "application/json",
     "Content-Type": "application/json",
     "X-Requested-With": "Paylock-SDK",
-    "X-Paylock-SDK-Version": currentConfig.sdkVersion
+    "X-Paylock-SDK-Version": currentConfig.sdkVersion,
   };
-  
+
   if (currentConfig.domain) {
     defaultHeaders["X-Paylock-Domain"] = currentConfig.domain;
   }
-  
+
   const headers = { ...defaultHeaders, ...additionalHeaders };
   const retries = currentConfig.network.retries;
   const timeoutMs = currentConfig.network.timeout;
@@ -205,32 +259,44 @@ async function apiRequest(path, body, method = "POST", additionalHeaders = {}) {
       const response = await fetch(url, {
         method,
         headers,
-        body: method !== "GET" && body ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
-        signal: controller.signal
+        body:
+          method !== "GET" && body
+            ? typeof body === "string"
+              ? body
+              : JSON.stringify(body)
+            : undefined,
+        signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw createError(`API request failed (${response.status}): ${errorBody}`);
+        throw createError(
+          `API request failed (${response.status}): ${errorBody}`,
+        );
       }
       return await response.json();
     } catch (error) {
       clearTimeout(timeoutId);
       lastError = error;
       if (currentConfig?.debug) {
-        const reason = error.name === 'AbortError' ? 'Timeout' : error.message;
-        console.warn(`[Paylock] API attempt ${i + 1}/${retries} failed:`, reason);
+        const reason = error.name === "AbortError" ? "Timeout" : error.message;
+        console.warn(
+          `[Paylock] API attempt ${i + 1}/${retries} failed:`,
+          reason,
+        );
       }
-      if (i < retries - 1) await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
+      if (i < retries - 1)
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
     }
   }
   throw lastError;
 }
 
 function handleInvalidLicense(error, reason = "invalid") {
-  if (currentConfig?.debug) console.error(`[Paylock] license validation failed (${reason}):`, error);
+  if (currentConfig?.debug)
+    console.error(`[Paylock] license validation failed (${reason}):`, error);
 
   if (reason === "expired" && currentConfig.onExpired) {
     currentConfig.onExpired(error);
@@ -246,13 +312,15 @@ function handleInvalidLicense(error, reason = "invalid") {
   if (mode === "modal") {
     showPaylockModal(currentConfig.modalText);
   } else if (mode === "redirect") {
-    if (isBrowser()) window.location.href = currentConfig.redirectUrl || "https://paylock.ng/upgrade";
+    if (isBrowser())
+      window.location.href =
+        currentConfig.redirectUrl || "https://paylock.ng/upgrade";
   }
 }
 
 function showPaylockModal(text) {
   if (!isBrowser() || !document.body) return;
-  
+
   const modalId = "paylock-modal";
   if (document.getElementById(modalId)) {
     return; // Prevent duplicate modals
@@ -265,7 +333,9 @@ function showPaylockModal(text) {
   const borderColor = theme.border || primary;
   const glowEnabled = theme.glow !== false;
 
-  const message = text || "Access denied. This application cannot run without a valid Paylock integration.";
+  const message =
+    text ||
+    "Access denied. This application cannot run without a valid Paylock integration.";
 
   const modal = document.createElement("div");
   modal.id = modalId;
@@ -307,17 +377,20 @@ function getCache() {
     if (now - data.timestamp < currentConfig.cache.ttl * 1000) {
       return data.payload;
     }
-  } catch(e) {}
+  } catch (e) {}
   return null;
 }
 
 function setCache(payload) {
   if (!isBrowser() || !currentConfig.cache.enabled) return;
   const targetKey = currentConfig.licenseKey || currentConfig.apiKey;
-  localStorage.setItem(getStorageKey(`auth_${targetKey}`), JSON.stringify({
-    timestamp: Date.now(),
-    payload
-  }));
+  localStorage.setItem(
+    getStorageKey(`auth_${targetKey}`),
+    JSON.stringify({
+      timestamp: Date.now(),
+      payload,
+    }),
+  );
 }
 
 async function checkProjectStatus() {
@@ -325,9 +398,9 @@ async function checkProjectStatus() {
   if (currentConfig.injectables) {
     queryParams.set("include", "injectables");
   }
-  
+
   const path = `project/has-paid?${queryParams.toString()}`;
-  
+
   const headers = {};
   const targetKey = currentConfig.licenseKey || currentConfig.apiKey;
   if (targetKey) {
@@ -354,7 +427,7 @@ async function bootstrap(config) {
     } else {
       const result = await checkProjectStatus();
       data = result.data || {};
-      
+
       if (data.has_paid === true) {
         setCache(data);
       }
@@ -362,32 +435,44 @@ async function bootstrap(config) {
 
     currentState.initialized = true;
     currentState.projectStatus = data.has_paid ? "ACTIVE" : "INACTIVE";
-    currentState.entitlements = Array.isArray(data.entitlements) ? data.entitlements : [];
+    currentState.entitlements = Array.isArray(data.entitlements)
+      ? data.entitlements
+      : [];
 
     if (data.has_paid === true) {
       if (currentConfig.injectables && Array.isArray(data.injectables)) {
         if (currentConfig.injectablesEndpoint) {
           try {
-            await forwardInjectables({ 
+            await forwardInjectables({
               injectables: data.injectables,
-              signature: data.injectablesSignature
+              signature: data.injectablesSignature,
             });
-            if (currentConfig.onInjectablesLoaded) currentConfig.onInjectablesLoaded(data.injectables);
+            if (currentConfig.onInjectablesLoaded)
+              currentConfig.onInjectablesLoaded(data.injectables);
           } catch (err) {
             console.warn("[Paylock] Failed to forward injectables:", err);
           }
         }
       }
 
-      emit("connected", { status: "ACTIVE", entitlements: currentState.entitlements });
+      emit("connected", {
+        status: "ACTIVE",
+        entitlements: currentState.entitlements,
+      });
       logDebug("SDK connected successfully");
       if (currentConfig.onReady) currentConfig.onReady(data);
       return data;
     }
 
     const reason = data.reason === "expired" ? "expired" : "invalid";
-    emit("error", { code: "PROJECT_UNPAID", message: "Project payment validation failed" });
-    handleInvalidLicense(new Error("Project payment validation failed."), reason);
+    emit("error", {
+      code: "PROJECT_UNPAID",
+      message: "Project payment validation failed",
+    });
+    handleInvalidLicense(
+      new Error("Project payment validation failed."),
+      reason,
+    );
     return data;
   } catch (error) {
     emit("error", { code: "INIT_FAILED", message: error.message, error });
@@ -400,43 +485,48 @@ async function bootstrap(config) {
 async function forwardInjectables(payload) {
   if (!currentConfig.injectablesEndpoint) return;
 
-  // IMPORTANT: The frontend cannot securely sign payloads. 
+  // IMPORTANT: The frontend cannot securely sign payloads.
   // Any "signature" generated here would be spoofable by the client.
-  // Real cryptographic signing of injectables must happen on the backend 
+  // Real cryptographic signing of injectables must happen on the backend
   // or via an opaque, unforgeable token provided by the Paylock API directly.
 
   try {
     const retries = currentConfig.network.retries;
     const timeoutMs = currentConfig.network.timeout;
-    
+
     let lastError;
     for (let i = 0; i < retries; i++) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      
+
       try {
         const response = await fetch(currentConfig.injectablesEndpoint, {
           method: "POST",
           headers: {
-            "Accept": "application/json",
+            Accept: "application/json",
             "Content-Type": "application/json",
             "X-Requested-With": "Paylock-SDK",
             "X-Paylock-SDK-Version": currentConfig.sdkVersion,
-            "X-Paylock-Signature": payload.signature || ""
+            "X-Paylock-Signature": payload.signature || "",
           },
           body: JSON.stringify({ injectables: payload.injectables }),
-          signal: controller.signal
+          signal: controller.signal,
         });
-        
+
         clearTimeout(timeoutId);
-        if (!response.ok) throw new Error(`Injectables forward failed (${response.status})`);
-        
-        if (currentConfig.debug) console.log("[Paylock] Injectables forwarded to backend successfully.");
+        if (!response.ok)
+          throw new Error(`Injectables forward failed (${response.status})`);
+
+        if (currentConfig.debug)
+          console.log(
+            "[Paylock] Injectables forwarded to backend successfully.",
+          );
         return;
       } catch (error) {
         clearTimeout(timeoutId);
         lastError = error;
-        if (i < retries - 1) await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
+        if (i < retries - 1)
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
     throw lastError;
@@ -445,8 +535,12 @@ async function forwardInjectables(payload) {
   }
 }
 
-function getConfig() { return currentConfig; }
-function getState() { return { ...currentState }; }
+function getConfig() {
+  return currentConfig;
+}
+function getState() {
+  return { ...currentState };
+}
 
 const Paylock = {
   bootstrap,
@@ -462,8 +556,9 @@ const Paylock = {
 
 if (isBrowser()) {
   if (preConfig && preConfig.auto === true) {
-    Paylock.bootstrap(preConfig).catch(err => {
-      if (preConfig.debug) console.error("[Paylock] Automatic bootstrap failed:", err);
+    Paylock.bootstrap(preConfig).catch((err) => {
+      if (preConfig.debug)
+        console.error("[Paylock] Automatic bootstrap failed:", err);
     });
   }
 }
